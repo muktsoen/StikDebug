@@ -232,6 +232,13 @@ struct HomeView: View {
         return nil
     }
 
+    private func queryValues(_ name: String, in components: URLComponents?) -> [String] {
+        components?.queryItems?
+            .filter { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+            .compactMap(\.value)
+            .filter { !$0.isEmpty } ?? []
+    }
+
     private func handleExternalURL(_ url: URL) {
         guard let host = url.host()?.lowercased() else { return }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
@@ -279,10 +286,25 @@ struct HomeView: View {
             }
         case "launch-app":
             if let bundleId = queryValue(["bundle-id", "bundleID", "bundle_id", "bundleId"], in: components) {
-                pendingExternalURLAction = .launchApp(bundleId)
+                let arguments = queryValues("arg", in: components)
+                pendingExternalURLAction = .launchApp(bundleID: bundleId, arguments: arguments)
             }
         default:
             break
+        }
+    }
+
+    /// A launch URL can arrive while the tunnel/DDI is still coming up (see issue #283).
+    /// The DVT process-control service only exists after the DDI is mounted, so wait
+    /// briefly and kick the existing mount flow instead of launching into a dead service.
+    private static func waitForDeveloperDiskImage(timeout: TimeInterval = 120) {
+        let isMounted = { DispatchQueue.main.sync { MountingProgress.shared.coolisMounted } }
+        if isMounted() { return }
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if isMounted() { return }
+            DispatchQueue.main.async { MountingProgress.shared.pubMount() }
+            Thread.sleep(forTimeInterval: 1)
         }
     }
 
@@ -316,10 +338,11 @@ struct HomeView: View {
                     }
                 }
             }
-        case .launchApp(let bundleID):
+        case .launchApp(let bundleID, let arguments):
             Haptics.medium()
             DispatchQueue.global(qos: .userInitiated).async {
-                let _ = JITEnableContext.shared.launchAppWithoutDebug(bundleID, logger: nil)
+                Self.waitForDeveloperDiskImage()
+                let _ = JITEnableContext.shared.launchAppWithoutDebug(bundleID, logger: nil, arguments: arguments)
             }
         }
     }
