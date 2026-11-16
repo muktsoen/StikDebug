@@ -15,29 +15,17 @@ struct JITEnableConfiguration {
 
 enum HomeExternalAction: Identifiable {
     case enableJIT(JITEnableConfiguration)
-<<<<<<< ours
     case killProcess(Int)
-    case launchApp(String)
-=======
-    case killProcess(ProcessKillTarget)
     case launchApp(bundleID: String, arguments: [String])
->>>>>>> theirs
 
     var id: String {
         switch self {
         case .enableJIT(let configuration):
             return "enable-\(configuration.bundleID ?? "")-\(configuration.pid ?? 0)-\(configuration.scriptName ?? "")"
-<<<<<<< ours
         case .killProcess(let pid):
             return "kill-\(pid)"
-        case .launchApp(let bundleID):
-            return "launch-\(bundleID)"
-=======
-        case .killProcess(let target):
-            return "kill-\(target)"
         case .launchApp(let bundleID, let arguments):
             return "launch-\(bundleID)-\(arguments.joined(separator: " "))"
->>>>>>> theirs
         }
     }
 
@@ -55,22 +43,13 @@ enum HomeExternalAction: Identifiable {
     var message: String {
         switch self {
         case .enableJIT(let configuration):
-<<<<<<< ours
             let scriptText = configuration.scriptData == nil ? "" : " and run a script"
             return "An external link wants to enable JIT\(scriptText) for \(targetDescription(for: configuration))."
         case .killProcess(let pid):
             return "An external link wants to kill process \(pid)."
-        case .launchApp(let bundleID):
-            return "An external link wants to launch \(bundleID)."
-=======
-            let scriptText = configuration.scriptData == nil ? "" : String(localized: " and run a script")
-            return String(localized: "An external link wants to enable JIT\(scriptText) for \(targetDescription(for: configuration)).")
-        case .killProcess(let target):
-            return String(localized: "An external link wants to kill process \(target.description).")
         case .launchApp(let bundleID, let arguments):
             let suffix = arguments.isEmpty ? "" : " with arguments: \(arguments.joined(separator: " "))"
-            return String(localized: "An external link wants to launch \(bundleID)\(suffix).")
->>>>>>> theirs
+            return "An external link wants to launch \(bundleID)\(suffix)."
         }
     }
 
