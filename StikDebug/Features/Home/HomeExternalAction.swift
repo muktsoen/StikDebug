@@ -28,7 +28,7 @@ enum ProcessKillTarget {
 enum HomeExternalAction: Identifiable {
     case enableJIT(JITEnableConfiguration)
     case killProcess(ProcessKillTarget)
-    case launchApp(String)
+    case launchApp(bundleID: String, arguments: [String])
 
     var id: String {
         switch self {
@@ -36,8 +36,8 @@ enum HomeExternalAction: Identifiable {
             return "enable-\(configuration.bundleID ?? "")-\(configuration.pid ?? 0)-\(configuration.scriptName ?? "")"
         case .killProcess(let target):
             return "kill-\(target)"
-        case .launchApp(let bundleID):
-            return "launch-\(bundleID)"
+        case .launchApp(let bundleID, let arguments):
+            return "launch-\(bundleID)-\(arguments.joined(separator: " "))"
         }
     }
 
@@ -59,8 +59,9 @@ enum HomeExternalAction: Identifiable {
             return String(localized: "An external link wants to enable JIT\(scriptText) for \(targetDescription(for: configuration)).")
         case .killProcess(let target):
             return String(localized: "An external link wants to kill process \(target.description).")
-        case .launchApp(let bundleID):
-            return String(localized: "An external link wants to launch \(bundleID).")
+        case .launchApp(let bundleID, let arguments):
+            let suffix = arguments.isEmpty ? "" : " with arguments: \(arguments.joined(separator: " "))"
+            return String(localized: "An external link wants to launch \(bundleID)\(suffix).")
         }
     }
 

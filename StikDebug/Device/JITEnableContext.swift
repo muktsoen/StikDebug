@@ -887,13 +887,15 @@ final class JITEnableContext {
         runDebugSession(logger: logger, callback: jsCallback) { _ in pid }
     }
 
-    func launchAppWithoutDebug(_ bundleID: String, logger: LogFunc?) -> Bool {
+    func launchAppWithoutDebug(_ bundleID: String, logger: LogFunc?, arguments: [String] = []) -> Bool {
         do {
             let pid = try withConnectedRemoteServer { remoteServer in
                 try withProcessControl(remoteServer: remoteServer) { processControl in
                     var pid: UInt64 = 0
                     let ffiError = bundleID.withCString { bundleID in
-                        process_control_launch_app(processControl, bundleID, nil, 0, nil, 0, false, true, &pid)
+                        Self.withCStringArray(arguments) { argPtr, argCount in
+                            process_control_launch_app(processControl, bundleID, nil, 0, argPtr, argCount, false, true, &pid)
+                        }
                     }
 
                     if let ffiError {
